@@ -1,0 +1,51 @@
+---
+# ──────────────────────────────────────────────────────────────
+# web_app role — default variables (Task 2 & 3, Lab 6)
+#
+# Defaults have the LOWEST precedence in Ansible's variable
+# hierarchy, so they are safely overridden from:
+#   group_vars/all.yml, host_vars/, or -e on the command line.
+# ──────────────────────────────────────────────────────────────
+
+# ── Application identity ──────────────────────────────────────
+web_app_app_name: "{{ app_name | default('app') }}"
+# Used as the Docker Compose service name, container name, and
+# the directory name under /opt/.
+
+# ── Docker image ──────────────────────────────────────────────
+web_app_dockerhub_username: "{{ dockerhub_username | default('reiterwurger') }}"
+web_app_dockerhub_password: "{{ dockerhub_password | default('') }}"
+web_app_docker_image: "{{ docker_image | default(web_app_dockerhub_username ~ '/' ~ web_app_app_name) }}"
+# Full Docker Hub image path: <username>/<repo>
+web_app_docker_tag: "{{ docker_tag | default('v1') }}"
+# Pinning a specific tag (e.g. "1.2.0") in production prevents
+# surprise upgrades; "latest" is fine for development.
+
+# ── Port mapping ──────────────────────────────────────────────
+web_app_app_port: "{{ app_port | default(8080) }}"
+# Port exposed on the HOST machine (access from outside: vm_ip:8000)
+web_app_app_internal_port: "{{ app_internal_port | default(8080) }}"
+# Port the application actually listens on INSIDE the container.
+# They can differ — e.g. a Go app on 8080 inside, but exposed on 8001.
+web_app_app_container_name: "{{ app_container_name | default(web_app_app_name) }}"
+# Explicit container name in Compose; defaults to app_name.
+
+# ── Docker Compose project directory ──────────────────────────
+web_app_compose_project_dir: "{{ compose_project_dir | default('/opt/' ~ web_app_app_name) }}"
+# All Compose files live here. Using /opt is conventional for
+# third-party software on Debian/Ubuntu systems.
+
+web_app_docker_compose_version: "{{ docker_compose_version | default('3.8') }}"
+# Compose file format version. 3.8 works with Docker 19.03+.
+
+# ── Wipe logic (Task 3) ──────────────────────────────────────
+# Default is FALSE — wipe tasks never run during a normal deploy.
+# Double-safety mechanism:
+#   1. This variable must be "true"   (-e "web_app_wipe=true")
+#   2. The tag must be active         (--tags web_app_wipe  OR no --tags flag)
+# Both conditions must be true before any destructive task runs.
+#
+# Usage examples:
+#   Wipe only:      ansible-playbook deploy.yml -e "web_app_wipe=true" --tags web_app_wipe
+#   Clean install:  ansible-playbook deploy.yml -e "web_app_wipe=true"
+web_app_wipe: false
