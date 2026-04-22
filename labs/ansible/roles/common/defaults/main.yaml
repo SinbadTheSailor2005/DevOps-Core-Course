@@ -1,0 +1,11 @@
+---
+common_packages:
+  - python3-pip
+  - curl
+  - git
+  - vim
+  - htop
+
+common_system_timezone: "{{ system_timezone | default('Etc/UTC') }}"
+
+common_deploy_user: "{{ deploy_user | default(ansible_user) }}"
